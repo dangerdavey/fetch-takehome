@@ -5,13 +5,9 @@ var allPoints = 0;
 var payersAndPointsDict = {};
 var transactionList = [];
 
-//GET /points - returns current points
+//GET /points - returns all current payer specific balances
 router.get('/', (req, res) => {
-    res.status(200).send({
-        allPoints,
-        payersAndPointsDict,
-        transactionList
-    })
+    res.status(200).send(payersAndPointsDict)
 });
 
 //POST /points - add transaction
@@ -20,9 +16,12 @@ router.post('/', (req, res) => {
     const points = parseInt(req.body.points);
     var error
     if(!points) {
-         res.status(400).send({ message: 'points cannot be zero.' })
+         res.status(400).send({ message: 'points value is missing' })
     }
-    else{//points is not 0
+    else if(points == 0){
+        res.status(400).send({message: 'points cannot be zero'})
+    }
+    else{//points is valid data
         //check if subtracting points
         if(points < 0 && !(payer in payersAndPointsDict)){
             res.status(400).send({ message: 'payer has not had points added yet' })
@@ -35,12 +34,10 @@ router.post('/', (req, res) => {
         }
         else{
             //check if payer is not in payers and points dict
-            if(!(payer in payersAndPointsDict)){
-                //if not add to dict
+            if(!(payer in payersAndPointsDict)){//if not add to dict
                 payersAndPointsDict[payer] = points;
             }
-            else{
-                //else add points to payer in dict
+            else{//else add points to payer in dict
                 payersAndPointsDict[payer] += points;
             }
             //add transaction to transaction list
@@ -84,7 +81,6 @@ router.post('/spend', (req, res) => {
                 spendingDict[tPayer] = (spendingDict[tPayer] || 0) + points;
                 transactionList[tIndex]["points"] -= points;//lower points in transaction
                 points = 0;//lower points to 0
-                //TODO: IN the future, here is where I would update the history of an individual transaction
             }
             tIndex++;
         }
